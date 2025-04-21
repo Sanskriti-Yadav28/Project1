@@ -1,41 +1,45 @@
+
 function getAddress() {
-  // Input & result box
   const pincode = document.getElementById("pincode").value.trim();
   const resultDiv = document.getElementById("result");
 
   // Clear previous result
-  resultDiv.style.display = "none";
   resultDiv.innerHTML = "";
 
-  // Check pincode is 6 digits
-  if (!/^\d{6}$/.test(pincode)) {
-    resultDiv.style.display = "block";
-    resultDiv.innerHTML = "⚠️ Please enter a valid 6-digit pincode.";
+  // Check if pincode is valid
+  if (pincode.length !== 6 || isNaN(pincode)) {
+    resultDiv.innerHTML = "❗ Please enter a valid 6-digit pincode.";
     return;
   }
 
-  // API Call
-  fetch(`https://api.zippopotam.us/in/${pincode}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("Not Found");
-      }
-      return response.json();
-    })
-    .then(data => {
-      const place = data.places[0];
+  const API = `https://api.postalpincode.in/pincode/${pincode}`;
 
-      // Show result
-      resultDiv.style.display = "block";
-      resultDiv.innerHTML = `
-        ✅ <strong>Address Found:</strong><br><br>
-        📍 <b>City:</b> ${place["place name"]}<br>
-        🏙️ <b>State:</b> ${place["state"]}<br>
-        🌍 <b>Country:</b> ${data["country"]}
-      `;
+  fetch(API)
+    .then((resp) => resp.json())
+    .then((data) => {
+      const info = data[0];
+      console.log(info);
+
+      if (info.Status === "Success") {
+        const postOffices = info.PostOffice;
+        let output = `<h3>Results for PIN ${pincode}</h3>`;
+
+        postOffices.forEach((office) => {
+          output += `
+            <p><strong>Post Office:</strong> ${office.Name}</p>
+            <p><strong>District:</strong> ${office.District}</p>
+            <p><strong>State:</strong> ${office.State}</p>
+            <hr/>
+          `;
+        });
+
+        resultDiv.innerHTML = output;
+      } else {
+        resultDiv.innerHTML = info.Message;
+      }
     })
-    .catch(error => {
-      resultDiv.style.display = "block";
-      resultDiv.innerHTML = "❌ Address not found for this pincode.";
+    .catch((error) => {
+      resultDiv.innerHTML = "Error fetching the data for this PIN code. Try again later.";
+      console.log(error);
     });
 }
